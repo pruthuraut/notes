@@ -1,5 +1,10 @@
 ## Network Enumeration Tools
 
+```
+https://frequent-dust-0e9.notion.site/CPTS-1ff6784735808052aafce5f7ffecabe6
+https://github.com/infovault-Ytube/CEH-Practical-Notes
+```
+
 ### Nmap Commands
 
 ```bash
