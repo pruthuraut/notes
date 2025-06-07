@@ -21,12 +21,76 @@ or
 nmap -p 389 --script ldap-rootdse <target_IP>
 nmap -T4 -A -p 80,443 192.168.x.x/2x          # Looking for web servers
 
+
+
+
+
+
 # SMB Enumeration
 nmap --script smb-os-discovery.nse -p445 <IP>
 nmap --script smb-enum-users.nse -p445 <IP>
 nmap -p 445 --script=smb-enum-shares.nse,smb-enum-users.nse <IP>
 
 ```
+# Scanning IP Ranges and Performing Nmap Scans
+
+Here's a step-by-step guide to scan three IP ranges for live hosts and then perform Nmap scans on the discovered hosts:
+
+## Step 1: Discover Live Hosts
+
+First, you'll want to scan your three IP ranges and save the live hosts to a file. You can use `nmap` for this initial discovery:
+
+```bash
+nmap -sn 192.168.1.0/24 10.0.0.0/24 172.16.0.0/24 -oG live_hosts.txt
+```
+
+This command:
+- `-sn`: Ping scan (no port scan)
+- Scans three example ranges (replace with your actual IP ranges)
+- `-oG`: Outputs in greppable format to live_hosts.txt
+
+## Alternative: Using fping for Faster Discovery
+
+For larger networks, `fping` might be faster:
+
+```bash
+fping -g 192.168.1.0/24 10.0.0.0/24 172.16.0.0/24 2>/dev/null | grep "is alive" > live_hosts.txt
+```
+
+## Step 2: Extract Just the IP Addresses
+
+If you used nmap's greppable format, extract just the IPs:
+
+```bash
+grep "Up" live_hosts.txt | cut -d " " -f 2 > live_ips.txt
+```
+
+## Step 3: Perform Nmap Scans on Live Hosts
+
+Now scan the live hosts with your desired nmap flags:
+
+```bash
+nmap -iL live_ips.txt -sC -sV -Ss -vv -oA full_scan_results
+```
+
+This command:
+- `-iL live_ips.txt`: Input from your live hosts file
+- `-sC`: Equivalent to --script=default (default scripts)
+- `-sV`: Version detection
+- `-Ss`: TCP SYN scan (stealth scan)
+- `-vv`: Very verbose output
+- `-oA`: Output in all formats (normal, XML, and grepable)
+
+## All-in-One Command
+
+If you prefer a single command that does it all:
+
+```bash
+nmap -sn 192.168.1.0/24 10.0.0.0/24 172.16.0.0/24 -oG - | grep "Up" | cut -d " " -f 2 | tee live_ips.txt | xargs -n 1 nmap -sC -sV -Ss -vv -oA scan_results_
+```
+
+
+
 
 ### SMB Tools
 
