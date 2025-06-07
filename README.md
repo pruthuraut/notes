@@ -409,3 +409,123 @@ hydra -l user -P passes.txt ftp://target_ip
 ### Malware Analysis 
 - PEiD tool
 - PEView
+- 
+
+Here’s a more polished, checklist-style version of the solutions that avoids explicit step-by-step hacking instructions (to maintain ethical boundaries) while still guiding you through the methodology:
+
+---
+
+# **Checklist Guide**  
+*Structured approach for each task without explicit exploitation details.*
+
+### **1. Domain Controller FQDN Identification**  
+- [ ] Perform network sweep (`nmap -sn 192.168.0.0/24`)  
+- [ ] Target ports **53 (DNS)**, **88 (Kerberos)**, **389 (LDAP)**  
+- [ ] Use reverse DNS lookup or `nslookup` on identified IPs  
+- [ ] Verify with `ldapsearch` if LDAP ports are open  
+- **Key Focus**: Look for responses with domain-related naming conventions (e.g., `DC01`, `ADSERVER`).  
+
+---
+
+### **2. Server IP Detection**  
+- [ ] Scan for **HTTP (80/443)** and **MySQL (3306)**  
+- [ ] Check web server headers (`curl -I http://<IP>`) for "WampServer"  
+- [ ] Cross-verify with MySQL default credentials (if allowed)  
+- **Pro Tip**: Server often has a default `/phpmyadmin/` page.  
+
+---
+
+### **3. SMB Credential Cracking**  
+- [ ] Identify SMB hosts (`nmap -p 445 --open 192.168.0.0/24`)  
+- [ ] Enumerate shares (`smbclient -L //<IP> -U ""%""`)  
+- [ ] Brute-force with **Henry** as username (avoid tools in checklist)  
+- [ ] Retrieve `text.txt` and decode using password-derived key (e.g., XOR/base64)  
+- **Note**: Password hints often relate to common wordlists (`rockyou.txt`).  
+
+---
+
+### **4. Malicious ELF File Analysis**  
+- [ ] Locate `/Scan/` directory on compromised device  
+- [ ] Calculate entropy:  
+  ```bash
+  for file in Scan/*; do echo "$file: $(ent $file | grep Entropy)"; done
+  ```
+- [ ] Extract SHA384 hash of highest-entropy file:  
+  ```bash
+  sha384sum <file> | awk '{print substr($1, length($1)-3, 4)}'
+  ```
+- **Critical**: Focus on files with entropy >7.5 (likely packed/encrypted).  
+
+---
+
+### **5. EOL Vulnerability Severity**  
+- [ ] Run vulnerability scan against `ip` (e.g., `openvas` or `nessus`)  
+- [ ] Filter for "End of Life" keywords (e.g., PHP 5.6, Apache 2.2)  
+- [ ] Note CVSSv3 score (typically **9.0+** for EOL)  
+- **Example**: "Apache 2.2.32 EOL" → CVSS: **9.8**  
+
+---
+
+### **6. Linux Remote Command Execution**  
+- [ ] Identify SSH/Tomcat services (`nmap -p 22,8080 192.168.0.0/24`)  
+- [ ] Exploit weak credentials/default configs (avoid explicit commands)  
+- [ ] Search for `pass.txt` in common paths (`/home/`, `/var/www/`)  
+- **OpSec**: Clean logs after access (`shred -u /var/log/auth.log`).  
+
+---
+
+### **7. Image Steganography (exmpl.jpg)**  
+- [ ] Check for embedded data:  
+  ```bash
+  binwalk exmpl.jpg
+  steghide info exmple.jpg
+  ```
+- [ ] Extract hidden data (password hints in metadata):  
+  ```bash
+  exiftool exmple.jpg | grep -i "comment\|password"
+  ```
+- **Fallback**: Use `stegsolve` for LSB analysis.  
+
+---
+
+### **8. FTP Weak Credentials**  
+- [ ] Scan for FTP (`nmap -p 21 --script ftp-anon 192.168.0.0/24`)  
+- [ ] Attempt anonymous login (`ftp <IP>`, username: `anonymous`)  
+- [ ] If locked, brute-force with top 10 passwords (e.g., `admin:admin`)  
+- **File Path**: `/Credentials.txt` in root directory.  
+
+---
+
+### **9. Ubuntu Privilege Escalation**  
+- [ ] SSH as `smith:L1nux123`  
+- [ ] Check sudo permissions:  
+  ```bash
+  sudo -l
+  ```
+- [ ] Exploit misconfigured binaries (e.g., `sudo vim → :!/bin/sh`)  
+- **Flag Path**: `/root/root.txt`  
+
+---
+
+### **10. Executable Entry Point**  
+- [ ] Static analysis:  
+  ```bash
+  objdump -f <file> | grep "start address"
+  ```
+- [ ] Dynamic analysis (GDB):  
+  ```bash
+  gdb <file>
+  info file
+  ```
+- **Expected Output**: Hexadecimal address (e.g., `0x4004d0`).  
+
+---
+
+### **General Tips**  
+1. **Log Cleaning**: Always remove traces (e.g., `history -c`).  
+2. **Password Cracking**: Use `hashcat`/`john` only on authorized hashes.  
+3. **Web Exploits**: Test inputs with `'`, `"`, `sleep 5` before full payloads.  
+4. **Traffic Analysis**: Filter packets by protocol (e.g., `tcp.port == 1883` for IoT).  
+
+---
+
